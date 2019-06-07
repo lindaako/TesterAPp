@@ -87,26 +87,28 @@ public class MainActivity extends AppCompatActivity
                 BluetoothDevice device = intent.getParcelableExtra (BluetoothDevice.EXTRA_DEVICE);
                 mBTDevices.add(device);
                 Log.d("Broadcast Received", "onReceive: " + device.getName() + ": " + device.getAddress());
-                if(device.getName().equals("raspberrypi"))
-                {
-                    bluetoothDevice = device;
-                    Log.d("BluetoothDevice ", "The bluetooth device seen is " + bluetoothDevice.getName());
-                    PairDevice(bluetoothDevice);
-
-
-                }
                 mDeviceListAdapter = new DeviceListAdapter(context, R.layout.device_adapter_view, mBTDevices);
                 lvNewDevices.setAdapter(mDeviceListAdapter);
+
+                if(device.getName() != null && device.getName().contains("raspberrypi"))
+                {
+                    Log.d("BluetoothDevice ", "The bluetooth device seen is " + device.getName());
+                    bluetoothDevice = device;
+
+                    try {
+                        createBond(bluetoothDevice);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                }
+
             }
 
-            else
-            {
-                Log.i("Bluetooth", "NOOOOOOOOOOOTTT FOUNDDDDDDDDDDDD " );
-            }
         }
     };
 
-    public void Discover_Devices_and_Pair()
+    public void Discover_Devices()
     {
         Log.d("The app", "btnDiscover: Looking for unpaired devices.");
 
@@ -175,6 +177,15 @@ public class MainActivity extends AppCompatActivity
         }
     }*/
 
+/*if(device.getName().equals("raspberrypi"))
+                {
+                    bluetoothDevice = device;
+                    Log.d("BluetoothDevice ", "The bluetooth device seen is " + bluetoothDevice.getName());
+                    PairDevice(bluetoothDevice);
+
+
+                }*/
+
     private void PairDevice(BluetoothDevice mydevice)
     {
 
@@ -185,10 +196,11 @@ public class MainActivity extends AppCompatActivity
         {
             Log.d("PairDevice", "Trying to pair with " + mydevice);
             mydevice.createBond();
+            Log.d("YourDevice", "PAIRING to " + mydevice + " is COMPLETED!");
         }
     }
 
-/*
+
     public boolean createBond(BluetoothDevice btDevice)
             throws Exception
     {
@@ -197,7 +209,7 @@ public class MainActivity extends AppCompatActivity
         Boolean returnValue = (Boolean) createBondMethod.invoke(btDevice);
         System.out.println("Pairing status = "+ returnValue);
         return returnValue.booleanValue();
-    }*/
+    }
 
     private void findDevice()
     {
@@ -256,6 +268,16 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    @Override
+    protected void onDestroy()
+    {
+        Log.d("hey", "onDestroy: called.");
+        super.onDestroy();
+        unregisterReceiver(myReceiver);
+        unregisterReceiver(mBroadcastReceiver4);
+
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -266,15 +288,24 @@ public class MainActivity extends AppCompatActivity
         lvNewDevices = (ListView) findViewById(R.id.lvNewDevices);
         mBTDevices = new ArrayList<>();
 
+        IntentFilter discoverDevicesIntent = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(myReceiver, discoverDevicesIntent);
+        makeDiscoverable();
+
+
         //Broadcasts when bond state changes (ie:pairing)
+
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         registerReceiver(mBroadcastReceiver4, filter);
+        Discover_Devices();
 
+        for(BluetoothDevice d :  mBTDevices)
+        {
+            if(d.getName() != null && d.getName().contains("raspberrypi"))
+                Log.d("BluetoothDevice ", "The bluetooth device seen is " + d.getName());
+        }
 
-        makeDiscoverable();
-        Discover_Devices_and_Pair();
-
-        findDevice();
+        //findDevice();
         //BTConnect();
 
 
