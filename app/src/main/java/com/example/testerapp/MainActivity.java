@@ -269,10 +269,11 @@ public class MainActivity extends AppCompatActivity
                             mmSocket.connect();
                             if (mmSocket.isConnected())
                             {
-                                Toast.makeText(MainActivity.this, "Connection successful!", Toast.LENGTH_LONG).show();
+
 
                                 mmOutStream = mmSocket.getOutputStream();
                                 mmOutStream.write(bluetooth_message.getBytes());
+                                Toast.makeText(MainActivity.this, "Connection successful!", Toast.LENGTH_LONG).show();
 
                             }
                         }
