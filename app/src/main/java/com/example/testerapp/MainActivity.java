@@ -37,11 +37,15 @@ public class MainActivity extends AppCompatActivity
 
     BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     BluetoothDevice bluetoothDevice ;
-    BluetoothDevice raspberrypi ;
-    DataOutputStream os;
+    OutputStream mmOutStream = null;
+    private static BluetoothSocket mmSocket;
+    String bluetooth_message = "Hello world";
+
     boolean deviceFound;
+    boolean alreadyConnected;
 
     public ArrayList<BluetoothDevice> mBTDevices = new ArrayList<>();
+    Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
     public DeviceListAdapter mDeviceListAdapter;
     ListView lvNewDevices;
 
@@ -163,43 +167,6 @@ public class MainActivity extends AppCompatActivity
         }
     };
 
-/*
-    private void pairDevice(BluetoothDevice mydevice)
-    {
-        try
-        {
-            Log.d("pairDevice()", "Start Pairing...");
-            Method m = mydevice.getClass().getMethod("createBond", (Class[]) null);
-            m.invoke(mydevice, (Object[]) null);
-            Log.d("pairDevice()", "Pairing finished.");
-        } catch (Exception e) {
-            Log.e("pairDevice()", e.getMessage());
-        }
-    }*/
-
-/*if(device.getName().equals("raspberrypi"))
-                {
-                    bluetoothDevice = device;
-                    Log.d("BluetoothDevice ", "The bluetooth device seen is " + bluetoothDevice.getName());
-                    PairDevice(bluetoothDevice);
-
-
-                }*/
-
-    private void PairDevice(BluetoothDevice mydevice)
-    {
-
-
-        //create the bond.
-        //NOTE: Requires API 17+? I think this is JellyBean
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2)
-        {
-            Log.d("PairDevice", "Trying to pair with " + mydevice);
-            mydevice.createBond();
-            Log.d("YourDevice", "PAIRING to " + mydevice + " is COMPLETED!");
-        }
-    }
-
 
     public boolean createBond(BluetoothDevice btDevice)
             throws Exception
@@ -213,13 +180,14 @@ public class MainActivity extends AppCompatActivity
 
     private void findDevice()
     {
-        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+
         if (pairedDevices.size() > 0) {
             for (BluetoothDevice device : pairedDevices) {
                 if (device.getName().equals("raspberrypi")) {
                     bluetoothDevice = device;
                     deviceFound = true;
                     System.out.println("raspberry pi found status = "+ deviceFound);
+                    Toast.makeText(MainActivity.this,"raspberry pi found status = "+ deviceFound,Toast.LENGTH_LONG).show();
                     break;
                 }
             }
@@ -232,37 +200,79 @@ public class MainActivity extends AppCompatActivity
     {
 
         final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         BluetoothSocket socket = null;
-        String RPi_MAC = "b8:27:eb:66:01:cf";
+        //String RPi_MAC = "b8:27:eb:66:01:cf";
+        int no_of_times_data_sent = 0;
 
-        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
         // If there are paired devices
         if (pairedDevices.size() > 0) {
 
             // Loop through paired devices
-            for (BluetoothDevice device : pairedDevices)
+            for (BluetoothDevice device2 : pairedDevices)
             {
-                if (device.getAddress().equals(RPi_MAC)) {
-                    try {
-                        socket = device.createInsecureRfcommSocketToServiceRecord(MY_UUID);
-                    } catch (IOException e0) {
-                        Log.d("BT_TEST", "Cannot create socket");
-                        e0.printStackTrace();
+                //Toast.makeText(MainActivity.this,"BTConnect found paired devices list!",Toast.LENGTH_LONG).show();
+                if ((device2.getName().equals("raspberrypi")) && no_of_times_data_sent<1)
+                {
+
+                    Toast.makeText(MainActivity.this,"BTConnect found it!",Toast.LENGTH_LONG).show();
+
+                    try
+                    {
+                        // Get a BluetoothSocket to connect with the given BluetoothDevice.
+                        // MY_UUID is the app's UUID string, also used in the server code.
+                        if(mmSocket == null || mmSocket.getRemoteDevice() == null ||
+                                !mmSocket.getRemoteDevice().getAddress().equals(device2.getAddress())) {
+                            mmSocket = device2.createRfcommSocketToServiceRecord(MY_UUID);
+                            alreadyConnected = false;
+                            Toast.makeText(MainActivity.this," Already Connect = false!",Toast.LENGTH_LONG).show();
+
+                        }
+                        else
+                            {
+                                alreadyConnected = true;
+                            Toast.makeText(MainActivity.this,"Already Connect = true!",Toast.LENGTH_LONG).show();
+                            }
+
+                    }
+                    catch (IOException e)
+                    {
+                        Log.e("BTConnect()", "Socket's create() method failed", e);
                     }
 
-                    try {
-                        socket.connect();
-                    } catch (IOException e1) {
-                        try {
-                            socket.close();
-                            Log.d("BT_TEST", "Cannot connect");
-                            e1.printStackTrace();
-                        } catch (IOException e2) {
-                            Log.d("BT_TEST", "Socket not closed");
-                            e2.printStackTrace();
+
+                    if(!alreadyConnected)
+                    {
+                        // Cancel discovery because it otherwise slows down the connection.
+                        bluetoothAdapter.cancelDiscovery();
+
+                        try
+                        {
+                            // Connect to the remote device through the socket. This call blocks
+                            // until it succeeds or throws an exception.
+                            mmSocket.connect();
+                            if (mmSocket.isConnected())
+                            {
+                                Toast.makeText(MainActivity.this, "Connection successful!", Toast.LENGTH_LONG).show();
+
+                                mmOutStream = mmSocket.getOutputStream();
+                                mmOutStream.write(bluetooth_message.getBytes());
+                            }
+                        }
+                        catch (IOException connectException)
+                        {
+                            // Unable to connect; close the socket and return.
+                            try
+                            {
+                                mmSocket.close();
+                                Toast.makeText(MainActivity.this,"Connect failed! socket closed",Toast.LENGTH_LONG).show();
+                            } catch (IOException closeException)
+                            {
+                                Log.e("BTConnect()", "Could not close the client socket", closeException);
+                                Toast.makeText(MainActivity.this,"Could not close the client socket",Toast.LENGTH_LONG).show();
+                            }
                         }
                     }
+                    no_of_times_data_sent++;
                 }
             }
         }
@@ -292,21 +302,13 @@ public class MainActivity extends AppCompatActivity
         registerReceiver(myReceiver, discoverDevicesIntent);
         makeDiscoverable();
 
-
         //Broadcasts when bond state changes (ie:pairing)
-
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         registerReceiver(mBroadcastReceiver4, filter);
-        Discover_Devices();
 
-        for(BluetoothDevice d :  mBTDevices)
-        {
-            if(d.getName() != null && d.getName().contains("raspberrypi"))
-                Log.d("BluetoothDevice ", "The bluetooth device seen is " + d.getName());
-        }
-
-        //findDevice();
-        //BTConnect();
+        Discover_Devices(); //create bond in myReciever class
+        findDevice();
+        BTConnect();
 
 
     }
