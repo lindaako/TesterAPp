@@ -200,13 +200,15 @@ public class MainActivity extends AppCompatActivity
     private void findDevice()
     {
 
-        if (pairedDevices.size() > 0) {
-            for (BluetoothDevice device : pairedDevices) {
-                if (device.getName().equals("raspberrypi")) {
+        if (pairedDevices.size() > 0)
+        {
+            for (BluetoothDevice device : pairedDevices)
+            {
+                if (device.getName().equals("raspberrypi"))
+                {
                     bluetoothDevice = device;
                     deviceFound = true;
                     System.out.println("raspberry pi found status = "+ deviceFound);
-                    Toast.makeText(MainActivity.this,"raspberry pi found status = "+ deviceFound,Toast.LENGTH_LONG).show();
                     break;
                 }
             }
@@ -219,8 +221,6 @@ public class MainActivity extends AppCompatActivity
     {
 
         final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-        BluetoothSocket socket = null;
-        //String RPi_MAC = "b8:27:eb:66:01:cf";
         int no_of_times_data_sent = 0;
 
         // If there are paired devices
@@ -229,11 +229,9 @@ public class MainActivity extends AppCompatActivity
             // Loop through paired devices
             for (BluetoothDevice device2 : pairedDevices)
             {
-                //Toast.makeText(MainActivity.this,"BTConnect found paired devices list!",Toast.LENGTH_LONG).show();
+
                 if ((device2.getName().equals("raspberrypi")) && no_of_times_data_sent<1)
                 {
-
-                    Toast.makeText(MainActivity.this,"BTConnect found it!",Toast.LENGTH_LONG).show();
 
                     try
                     {
@@ -243,7 +241,7 @@ public class MainActivity extends AppCompatActivity
                                 !mmSocket.getRemoteDevice().getAddress().equals(device2.getAddress())) {
                             mmSocket = device2.createRfcommSocketToServiceRecord(MY_UUID);
                             alreadyConnected = false;
-                            Toast.makeText(MainActivity.this," Already Connect = false!",Toast.LENGTH_LONG).show();
+
 
                         }
                         else
@@ -284,11 +282,11 @@ public class MainActivity extends AppCompatActivity
                             try
                             {
                                 mmSocket.close();
-                                Toast.makeText(MainActivity.this,"Connect failed! socket closed",Toast.LENGTH_LONG).show();
+
                             } catch (IOException closeException)
                             {
                                 Log.e("BTConnect()", "Could not close the client socket", closeException);
-                                Toast.makeText(MainActivity.this,"Could not close the client socket",Toast.LENGTH_LONG).show();
+
                             }
                         }
                     }
