@@ -35,10 +35,11 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity
 {
 
+    private static BluetoothSocket mmSocket;
     BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     BluetoothDevice bluetoothDevice ;
     OutputStream mmOutStream = null;
-    private static BluetoothSocket mmSocket;
+
     String bluetooth_message = "Hello world";
 
     boolean deviceFound;
@@ -152,15 +153,22 @@ public class MainActivity extends AppCompatActivity
                 BluetoothDevice mDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 //3 cases:
                 //case1: bonded already
-                if (mDevice.getBondState() == BluetoothDevice.BOND_BONDED){
+                if (mDevice.getBondState() == BluetoothDevice.BOND_BONDED)
+                {
                     Log.d("mBroadcastReceiver4", "BroadcastReceiver: BOND_BONDED.");
+
+                    pairedDevices = bluetoothAdapter.getBondedDevices(); //recheck for the paired devices
+                    findDevice(); //find all the paired devices and list them
+                    BTConnect(); //find the raspberrypi , connect and send the data
+                    unpairDevice(mDevice);
+
                 }
                 //case2: creating a bone
-                if (mDevice.getBondState() == BluetoothDevice.BOND_BONDING) {
+                else if (mDevice.getBondState() == BluetoothDevice.BOND_BONDING) {
                     Log.d("mBroadcastReceiver4", "BroadcastReceiver: BOND_BONDING.");
                 }
                 //case3: breaking a bond
-                if (mDevice.getBondState() == BluetoothDevice.BOND_NONE) {
+                else if (mDevice.getBondState() == BluetoothDevice.BOND_NONE) {
                     Log.d("mBroadcastReceiver4", "BroadcastReceiver: BOND_NONE.");
                 }
             }
@@ -176,6 +184,17 @@ public class MainActivity extends AppCompatActivity
         Boolean returnValue = (Boolean) createBondMethod.invoke(btDevice);
         System.out.println("Pairing status = "+ returnValue);
         return returnValue.booleanValue();
+    }
+
+    private void unpairDevice (BluetoothDevice device)
+    {
+        try {
+            Method m = device.getClass()
+                    .getMethod("removeBond", (Class[]) null);
+            m.invoke(device, (Object[]) null);
+        } catch (Exception e) {
+            Log.e("unpairDevice", e.getMessage());
+        }
     }
 
     private void findDevice()
@@ -256,6 +275,7 @@ public class MainActivity extends AppCompatActivity
 
                                 mmOutStream = mmSocket.getOutputStream();
                                 mmOutStream.write(bluetooth_message.getBytes());
+
                             }
                         }
                         catch (IOException connectException)
@@ -307,9 +327,6 @@ public class MainActivity extends AppCompatActivity
         registerReceiver(mBroadcastReceiver4, filter);
 
         Discover_Devices(); //create bond in myReciever class
-        findDevice();
-        BTConnect();
-
 
     }
 
