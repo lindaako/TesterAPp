@@ -42,8 +42,9 @@ public class MainActivity extends AppCompatActivity
     OutputStream mmOutStream = null;
     InputStream mmInputStream = null;
     int bytes = 50;
+    int no_data_counter = 0;
 
-    String bluetooth_message = "Hello world";
+    String bluetooth_message = "hello";
 
     boolean deviceFound;
     boolean alreadyConnected;
@@ -270,25 +271,30 @@ public class MainActivity extends AppCompatActivity
                             // Connect to the remote device through the socket. This call blocks
                             // until it succeeds or throws an exception.
                             mmSocket.connect();
-                            if (mmSocket.isConnected())
-                            {
+                            if (mmSocket.isConnected()) {
 
 
-                                mmOutStream = mmSocket.getOutputStream();
-                                mmOutStream.write(bluetooth_message.getBytes());
+                                    mmOutStream = mmSocket.getOutputStream();
+                                    mmOutStream.write(bluetooth_message.getBytes());
 
 
-                                byte[] buffer = new byte[50];
-                                mmInputStream =mmSocket.getInputStream();
-                                bytes = mmInputStream.read(buffer);
-                                String confirmation_message = new String(buffer, 0, bytes);
+                                    byte[] buffer = new byte[50];
+                                    mmInputStream = mmSocket.getInputStream();
+                                    bytes = mmInputStream.read(buffer);
+                                    String confirmation_message = new String(buffer, 0, bytes);
 
 
-                                if(confirmation_message.contains("Message received"))
+                                if (confirmation_message.contains("Message received"))
+
                                     Toast.makeText(MainActivity.this, "Connection successful!", Toast.LENGTH_LONG).show();
                                 else
+                                    {
                                     Toast.makeText(MainActivity.this, "Unsuccessful Connection!", Toast.LENGTH_LONG).show();
                                     System.out.println("Message from raspberrypi : " + confirmation_message);
+
+                                }
+
+
                             }
                         }
                         catch (IOException connectException)
