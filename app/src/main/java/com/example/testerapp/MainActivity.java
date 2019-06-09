@@ -3,6 +3,7 @@ package com.example.testerapp;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.net.ServerSocket;
@@ -39,6 +40,8 @@ public class MainActivity extends AppCompatActivity
     BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     BluetoothDevice bluetoothDevice ;
     OutputStream mmOutStream = null;
+    InputStream mmInputStream = null;
+    int bytes = 50;
 
     String bluetooth_message = "Hello world";
 
@@ -273,8 +276,19 @@ public class MainActivity extends AppCompatActivity
 
                                 mmOutStream = mmSocket.getOutputStream();
                                 mmOutStream.write(bluetooth_message.getBytes());
-                                Toast.makeText(MainActivity.this, "Connection successful!", Toast.LENGTH_LONG).show();
 
+
+                                byte[] buffer = new byte[50];
+                                mmInputStream =mmSocket.getInputStream();
+                                bytes = mmInputStream.read(buffer);
+                                String confirmation_message = new String(buffer, 0, bytes);
+
+
+                                if(confirmation_message.contains("Message received"))
+                                    Toast.makeText(MainActivity.this, "Connection successful!", Toast.LENGTH_LONG).show();
+                                else
+                                    Toast.makeText(MainActivity.this, "Unsuccessful Connection!", Toast.LENGTH_LONG).show();
+                                    System.out.println("Message from raspberrypi : " + confirmation_message);
                             }
                         }
                         catch (IOException connectException)
